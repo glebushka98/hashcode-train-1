@@ -64,7 +64,7 @@ struct Edge {
     int len, cost;
     bool taken;
     int id;
-    T data;
+    T data = T();
 };
 
 struct Coordinates {
@@ -221,8 +221,21 @@ void validation(string graph_file_name, string file_name, int& cost) {
 
 namespace gleb {
     using namespace helper;
+
+    const int ITERATION = 1000;
+    const int PATH_TO_TAKE = 10000;
+
     void Solve(const string& out) {
-        Graph gr("input.in");
+        Graph<double> gr("input.in");
+        auto my_gr = gr.full_graph();
+
+        auto T = gr.t();
+
+        for (int i = 0; i < ITERATION; i++) {
+
+        }
+
+
     }
 
 } // namespace gleb
