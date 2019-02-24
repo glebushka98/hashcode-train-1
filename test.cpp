@@ -58,7 +58,7 @@ namespace Testing {
             {4, -2}
         };
 
-        auto mapa = helper::Graph<bool>::GetSegments(coordinates, 0 /* startJunctionNumber */);
+        auto mapa = helper::Graph<bool>::GetSegments1(coordinates, 0 /* startJunctionNumber */);
 
         TestEqual<int>(mapa[0], 0);
         TestEqual<int>(mapa[13], 0);
