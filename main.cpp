@@ -196,7 +196,7 @@ void validation(string graph_file_name, string file_name, int& cost) {
         for (size_t i = 0; i + 1 < path.size(); i++) {
             int a = path[i];
             int b = path[i + 1];
-            const Edge& edge = g.full_graph()[a][b];
+            auto& edge = g.full_graph()[a][b];
             if (edge.a == -1) {
                 ss << "no edge found between " << path[i] << " and " << path[i + 1] << "\n";
                 throw ss.str();
