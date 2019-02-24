@@ -58,8 +58,6 @@ static Point FromLatLon(double lat, double lon)
   return {LonToX(lon), LatToY(lat)};
 }
 
-}  // namespace
-
 struct Edge {
     int a, b;
     int len, cost;
@@ -215,6 +213,8 @@ void validation(string graph_file_name, string file_name, int& cost) {
         }
     }
 }
+
+}  // namespace
 
 #undef int
 #ifndef TEST
