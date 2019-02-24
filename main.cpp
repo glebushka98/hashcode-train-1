@@ -10,6 +10,7 @@
 #include <utility>
 #include <optional>
 #include <set>
+#include <random>
 
 using namespace std;
 
@@ -234,22 +235,83 @@ void validation(string graph_file_name, string file_name, int& cost) {
 namespace gleb {
     using namespace helper;
 
-    const int ITERATION = 1000;
-    const int PATH_TO_TAKE = 10000;
+    const int ITERATION = 100;
+    const int PATH_TO_TAKE = 1000;
+    const int BEST_PATH_TO_TAKE = 10;
 
     void Solve(const string& out) {
         Graph<double> gr("input.in");
-        auto my_gr = gr.full_graph();
+        auto& my_gr = gr.graph();
 
         auto T = gr.t();
 
-        auto gen_path = [&](int start) {
+        std::random_device rd;
+        std::mt19937 gen(rd());
 
+        auto gen_path = [&](int start, int64_t& score) {
+            int cur = start;
+            vector<Edge<double>*> path;
+            set<int> st;
+            int64_t cur_t = T;
+            score = 0;
+            while (cur_t) {
+                vector<Edge<double>*> vv;
+                double sum = 0;
+                for (auto& e : my_gr[cur]) {
+                    if (T >= e.cost) {
+                        vv.push_back(&e);
+                        sum += e.data;
+                    }
+                }
+                std::uniform_int_distribution<> dis(0, sum);
+                if (sum == 0) {
+                    return path;
+                }
+                int64_t rd_res = dis(gen);
+                sum = 0;
+                for (auto& v : vv) {
+                    sum += v->data;
+                    if (sum >= rd_res) {
+                        path.push_back(v);
+                        cur_t -= v->cost;
+                        auto hs = v->a * 20000 + v->b;
+                        if (st.count(hs)) {
+                            score += v->len;
+                        }
+                        st.insert(hs);
+                        assert(v->a == cur);
+                        cur = v->b;
+                        break;
+                    }
+                }
+            }
+            return path;
         };
+        cerr << "ITERATIONS started" << endl;
+//        for (int car = 0; car < gr.c(); car++) {
+            for (int i = 0; i < ITERATION; i++) {
+                auto cmp = [](auto& l, auto& r) {
+                    return l.first > r.first;
+                };
+                set<pair<int64_t, vector<Edge<double>*>>, decltype(cmp)> st(cmp);
+                for (int j = 0; j < PATH_TO_TAKE; j++) {
+                    int64_t score = 0;
+                    auto vec = gen_path(gr.s(), score);
+                    st.emplace(score, vec);
+                    if (st.size() > BEST_PATH_TO_TAKE) {
+                        st.erase(*st.rbegin());
+                    }
+                }
+                cerr << "ITERATION " << i << " SCORE FOUND " << st.begin()->first << endl;
 
-        for (int i = 0; i < ITERATION; i++) {
+                for (auto& bst : st) {
+                    for (auto &el : bst.second) {
+                        el->data++;
+                    }
+                }
+            }
+//        }
 
-        }
 
 
     }
@@ -260,7 +322,7 @@ namespace gleb {
 #ifndef TEST
 
 int main() {
-
+    gleb::Solve("input.in");
 }
 
 #endif
