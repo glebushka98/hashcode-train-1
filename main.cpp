@@ -165,8 +165,8 @@ private:
     int s_;
     int t_;
 
-    vector<vector<Edge>> g_;
-    vector<vector<Edge>> full_g_;
+    vector<vector<Edge<T>>> g_;
+    vector<vector<Edge<T>>> full_g_;
     vector<Point> coordinates_;
 };
 
@@ -242,6 +242,10 @@ namespace gleb {
         auto my_gr = gr.full_graph();
 
         auto T = gr.t();
+
+        auto gen_path = [&](int start) {
+
+        };
 
         for (int i = 0; i < ITERATION; i++) {
 
