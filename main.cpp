@@ -58,17 +58,20 @@ static Point FromLatLon(double lat, double lon)
   return {LonToX(lon), LatToY(lat)};
 }
 
+template <typename T = bool>
 struct Edge {
     int a, b;
     int len, cost;
     bool taken;
     int id;
+    T data;
 };
 
 struct Coordinates {
     double latitude, longitude;
 };
 
+template<typename T = bool>
 class Graph {
 public:
     Graph(string input_name) {
@@ -98,19 +101,19 @@ public:
         }
     }
 
-    vector<vector<Edge>> graph() const {
+    vector<vector<Edge<T>>> graph() const {
         return g_;
     }
 
-    vector<vector<Edge>> full_graph() const {
+    vector<vector<Edge<T>>> full_graph() const {
         return full_g_;
     }
 
-    vector<vector<Edge>>& graph() {
+    vector<vector<Edge<T>>>& graph() {
         return g_;
     }
 
-    vector<vector<Edge>>& full_graph() {
+    vector<vector<Edge<T>>>& full_graph() {
         return full_g_;
     }
 
@@ -149,8 +152,8 @@ private:
     int s_;
     int t_;
 
-    vector<vector<Edge>> g_;
-    vector<vector<Edge>> full_g_;
+    vector<vector<Edge<T>>> g_;
+    vector<vector<Edge<T>>> full_g_;
     vector<Coordinates> coordinates_;
 };
 
@@ -215,6 +218,14 @@ void validation(string graph_file_name, string file_name, int& cost) {
 }
 
 }  // namespace
+
+namespace gleb {
+    using namespace helper;
+    void Solve(const string& out) {
+        Graph gr("input.in");
+    }
+
+} // namespace gleb
 
 #undef int
 #ifndef TEST
