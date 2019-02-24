@@ -10,6 +10,7 @@
 #include <utility>
 #include <optional>
 #include <set>
+#include <unordered_map>
 
 using namespace std;
 
@@ -19,7 +20,14 @@ struct Point
     Point() = default;
     Point(double x, double y): x(x), y(y) {}
     Point operator-(const Point & point) {
-    return {x - point.x, y - point.y};
+        return {x - point.x, y - point.y};
+    }
+
+    Point & operator +=(Point const & p)
+    {
+        x += p.x;
+        y += p.y;
+        return *this;
     }
 
     Point(const Point & from) {
@@ -74,10 +82,6 @@ struct Edge {
     T data = T();
 };
 
-struct Coordinates {
-    double latitude, longitude;
-};
-
 template<typename T = bool>
 class Graph {
 public:
@@ -90,6 +94,8 @@ public:
             in >> lat >> lon;
             coordinates_[i] = helper::FromLatLon(lat, lon);
         }
+        PrepareSegments();
+
         full_g_.resize(n_);
         g_.resize(n_);
         for (int i = 0; i < n_; i++) {
@@ -154,8 +160,88 @@ public:
         return c_;
     }
 
+    static unordered_map<int, int> GetSegments(vector<Point> const & coordinates, size_t startJunctionNumber)
+    {
+        vector<pair<Point, int>> right;
+        vector<pair<Point, int>> left;
+
+        vector<pair<Point, int>> preLeft;
+        vector<pair<Point, int>> preRight;
+        Point start = coordinates[startJunctionNumber];
+        for (size_t i = 0; i < coordinates.size(); ++i)
+        {
+            if (i == startJunctionNumber)
+                continue;
+
+            auto const & p = coordinates[i];
+            if (p.x == start.x)
+            {
+                if (p.y > 0)
+                    preLeft.emplace_back(p, i);
+                else
+                    preRight.emplace_back(p, i);
+
+                continue;
+            }
+
+            if (p.x - start.x > 0)
+                right.emplace_back(p, i);
+            else
+                left.emplace_back(p, i);
+        }
+
+        auto const comparator = [&start](auto const & a, auto const & b)
+        {
+            double aCoef = (a.first.y - start.y) / (a.first.x - start.x);
+            double bCoef = (b.first.y - start.y) / (b.first.x - start.x);
+
+            return aCoef < bCoef;
+        };
+
+        std::sort(right.begin(), right.end(), comparator);
+
+        std::sort(left.begin(), left.end(), comparator);
+
+        preRight.insert(preRight.end(), right.begin(), right.end());
+        preLeft.insert(preLeft.end(), left.begin(), left.end());
+
+        preRight.insert(preRight.end(), preLeft.begin(), preLeft.end());
+
+        size_t n = static_cast<int64_t>(coordinates.size() / 8);
+        size_t cnt = 0;
+        int currentSector = 0;
+        unordered_map<int, int> result;
+        for (size_t i = 0; i < coordinates.size(); ++i)
+        {
+            if (cnt >= n)
+            {
+                ++currentSector;
+                cnt = 0;
+            }
+
+            result[preRight[i].second] = currentSector;
+            cnt++;
+        }
+
+        result[startJunctionNumber] = 0;
+        return result;
+    }
+
+    void PrepareSegments()
+    {
+        sectors_ = GetSegments(coordinates_, s_);
+    }
+
     int GetSegmentNumber(int junctionNumber) {
-        return 0;
+        auto const it = sectors_.find(junctionNumber);
+        if (it == sectors_.cend())
+        {
+            std::stringstream ss;
+            ss << "bad junction number: " << junctionNumber;
+            throw std::runtime_error(ss.str());
+        }
+
+        return it->second;
     }
 
 private:
@@ -168,6 +254,9 @@ private:
     vector<vector<Edge<T>>> g_;
     vector<vector<Edge<T>>> full_g_;
     vector<Point> coordinates_;
+
+    // JunctionNumber => sector number
+    unordered_map<int, int> sectors_;
 };
 
 void validation(string graph_file_name, string file_name, int& cost) {
