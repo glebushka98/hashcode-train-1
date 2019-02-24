@@ -30,8 +30,6 @@ public:
 
     int s() const;
 
-    int cars_number() const;
-
     int t() const;
 
     int n() const;
