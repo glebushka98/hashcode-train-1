@@ -13,12 +13,12 @@ namespace Testing {
     }
 
     void TestReadGraph() {
-        Graph g("input.in");
+        helper::Graph g("input.in");
     }
 
     void TestValidation() {
         int64_t cost;
-        validation("test_graph.in", "test_answer.out", cost);
+        helper::validation("test_graph.in", "test_answer.out", cost);
         if (cost != 450) {
             stringstream ss;
             ss << "wrong answer: " << cost << " correct is: " << 450 << "\n";
