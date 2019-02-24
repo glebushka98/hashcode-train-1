@@ -54,47 +54,6 @@ private:
     vector<vector<Edge>> full_g_;
 };
 
-//bool validation(string file_name, double& res) {
-//    const string input_name = "input.in";
-//    Graph g(input_name);
-//    ifstream cin(file_name);
-//    stringstream ss;
-//
-//    int k;
-//    cin >> k;
-//
-//    if (k < 0 || k > g.cars_number()) {
-//        ss << "bad cars number: " << k;
-//        throw ss.str();
-//    }
-//
-//    for (int i = 0; i < k; i++) {
-//        int sz;
-//        cin >> sz;
-//        if (sz <= 0) {
-//            ss << "bad path length: " << sz;
-//            throw ss.str();
-//        }
-//        vector<int> path;
-//        for (int j = 0; j < sz; j++) {
-//            int cur;
-//            cin >> cur;
-//            path.push_back(cur);
-//        }
-//        if (path[0] != g.start_vertex()) {
-//            ss << "bad start vertex: " << path[0];
-//            throw ss.str();
-//        }
-//        for (size_t i = 0; i + 1 < path.size(); i++) {
-//            auto edge = g.get_edge(path[i], path[i + 1]);
-//            if (!edge) {
-//                ss << "no edge found between " << path[i] << " and " << path[i + 1] << "\n";
-//                throw ss.str();
-//            }
-//        }
-//    }
-//}
-
 #ifndef TEST
 
 int main() {
