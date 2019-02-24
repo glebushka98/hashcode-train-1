@@ -30,4 +30,5 @@ cmake_install.cmake
 .idea/*
 .idea/workspace
 cmake-build-debug/
+cmake-build-release/
 .idea/

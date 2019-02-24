@@ -16,12 +16,19 @@ using namespace std;
 #define int int64_t
 struct Point
 {
-  Point(double x, double y): x(x), y(y) {}
-  Point operator-(const Point & point) {
+    Point() = default;
+    Point(double x, double y): x(x), y(y) {}
+    Point operator-(const Point & point) {
     return {x - point.x, y - point.y};
-  }
+    }
 
-  double x, y;
+    Point(const Point & from) {
+      x = from.x;
+      y = from.y;
+    }
+
+    double x = 0.0;
+    double y = 0.0;
 };
 
 namespace helper {
@@ -77,9 +84,11 @@ public:
     Graph(string input_name) {
         ifstream in(input_name);
         in >> n_ >> m_ >> t_ >> c_ >> s_;
+        double lat, lon;
         coordinates_.resize(n_);
         for (int i = 0; i < n_; i++) {
-            in >> coordinates_[i].latitude >> coordinates_[i].longitude;
+            in >> lat >> lon;
+            coordinates_[i] = helper::FromLatLon(lat, lon);
         }
         full_g_.resize(n_);
         g_.resize(n_);
@@ -117,11 +126,11 @@ public:
         return full_g_;
     }
 
-    vector<Coordinates> coordinates() const {
+    vector<Point> coordinates() const {
         return coordinates_;
     }
 
-    vector<Coordinates>& coordinates() {
+    vector<Point>& coordinates() {
         return coordinates_;
     }
 
@@ -145,6 +154,10 @@ public:
         return c_;
     }
 
+    int GetSegmentNumber(int junctionNumber) {
+        return 0;
+    }
+
 private:
     int n_;
     int m_;
@@ -152,9 +165,9 @@ private:
     int s_;
     int t_;
 
-    vector<vector<Edge<T>>> g_;
-    vector<vector<Edge<T>>> full_g_;
-    vector<Coordinates> coordinates_;
+    vector<vector<Edge>> g_;
+    vector<vector<Edge>> full_g_;
+    vector<Point> coordinates_;
 };
 
 void validation(string graph_file_name, string file_name, int& cost) {
@@ -216,8 +229,7 @@ void validation(string graph_file_name, string file_name, int& cost) {
         }
     }
 }
-
-}  // namespace
+}  // namespace helper
 
 namespace gleb {
     using namespace helper;
