@@ -1,0 +1,43 @@
+# Prerequisites
+*.d
+
+# Compiled Object files
+*.slo
+*.lo
+*.o
+*.obj
+
+# Precompiled Headers
+*.gch
+*.pch
+
+# Compiled Dynamic libraries
+*.so
+*.dylib
+*.dll
+
+# Fortran module files
+*.mod
+*.smod
+
+# Compiled Static libraries
+*.lai
+*.la
+*.a
+*.lib
+*.out
+# Executables
+*.exe
+*.out
+*.app
+algo
+cmake-build-debug/*
+CMakeFiles/*
+algo_test
+CMakeCache.txt
+Makefile
+algo.cbp
+algo
+cmake_install.cmake
+.idea/*
+.idea/workspace
