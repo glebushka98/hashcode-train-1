@@ -254,7 +254,6 @@ private:
 };
 
 void validation(string graph_file_name, string file_name, int& cost) {
-    string input_name = "input.in";
     Graph g(graph_file_name);
     ifstream cin(file_name);
     stringstream ss;
@@ -288,14 +287,19 @@ void validation(string graph_file_name, string file_name, int& cost) {
             ss << "bad start vertex: " << path[0];
             throw ss.str();
         }
+        if (path.size() < 2) {
+            continue;
+        }
         double sum_time = 0;
         for (size_t i = 0; i + 1 < path.size(); i++) {
             int a = path[i];
             int b = path[i + 1];
             Edge<> edge;
+            edge.a = edge.b = -1;
             for (const auto& e : g.graph()[a]) {
                 if (e.b == b) {
                     edge = e;
+                    break;
                 }
             }
             if (edge.a == -1) {
@@ -317,7 +321,7 @@ void validation(string graph_file_name, string file_name, int& cost) {
         }
     }
 
-    cout << "you score: " << cost << "\n";
+    cout << "your score: " << cost << "\n";
 }
 
 }  // namespace helper
@@ -405,26 +409,39 @@ namespace gleb {
 }  // namespace gleb;
 
 namespace george {
+    const string graph_file = "input.in";
+    helper::Graph graph(graph_file);
+
     struct Edge : public helper::Edge<> {
         double profit;
         int rev_index;
     };
 
     void print_ans(const vector<vector<int>>& paths) {
-        ofstream out("george_output.txt");
-        out << paths.size() << endl;
+        ofstream cout("george_output.txt");
+        cout << paths.size() << endl;
         for (const auto& path : paths) {
-            out << path.size() << " ";
+            auto cur_seg = graph.GetSegmentNumber(path.back());
+//            for (int i = (int)path.size() - 1, j = 0; i >= 0 && j < 100; i--, j++) {
+//                assert(graph.GetSegmentNumber(path[i]) == cur_seg);
+//            }
+            clog << "Segment number: " << cur_seg << " ";
+            cout << path.size() << " ";
             for (auto v : path) {
-                out << v << " ";
+                cout << v << " ";
             }
-            out << "\n";
+            cout << "\n";
         }
-        out.close();
+        cout.close();
+//        exit(0);
+    }
+
+    int rand_int(int sz) {
+        return rand() % sz;
     }
 
     void solve() {
-        helper::Graph graph("input.in");
+        constexpr int kRandomWalk = 30;
         vector<vector<Edge>> g(graph.n());
         map<pair<int, int>, int> used_edges;
         for (size_t i = 0; i < graph.n(); i++) {
@@ -434,7 +451,7 @@ namespace george {
                 if (used_edges.count({e.a, e.b})) {
                     rev_index = used_edges[{e.a, e.b}];
                 } else {
-                    used_edges[{e.b, e.a}] = j;
+                    used_edges[{e.b, e.a}] = g[i].size();
                 }
                 Edge new_edge;
                 new_edge.a = e.a;
@@ -443,40 +460,77 @@ namespace george {
                 new_edge.cost = e.cost;
                 if (rev_index != -1) {
                     new_edge.rev_index = rev_index;
-                    g[e.b][rev_index].rev_index = j + 1;
+                    g[e.b][rev_index].rev_index = j;
                 } else {
                     new_edge.rev_index = -1;
                 }
-                g[i].push_back(std::move(new_edge));
+                g[i].emplace_back(std::move(new_edge));
             }
-            sort(g[i].begin(), g[i].end(), [](const Edge& lhs, const Edge& rhs) -> bool {
-                return lhs.b < rhs.b;
-            });
         }
         vector<vector<int>> paths;
         int expected_cost = 0;
         for (size_t car = 0; car < graph.c(); car++) {
             int cur_time = 0;
+            int cur_vertex = graph.s();
+            vector<int> path{cur_vertex};
+            auto cur_seg = -1;
             while (cur_time <= graph.t()) {
-                int cur_vertex = graph.s();
                 vector<pair<double, int>> edges_to_go;
-                vector<int> path{cur_vertex};
-                for (size_t i = 0; i < g[cur_vertex].size(); i++) {
-                    if (g[cur_vertex][i].taken) {
-                        continue;
+                int pos_max = -1;
+                if (path.size() < kRandomWalk) {
+                    auto index = rand_int(g[cur_vertex].size());
+                    for (size_t i = 0; i < g[cur_vertex].size(); i++) {
+                        if (cur_time + g[cur_vertex][i].cost > graph.t()) {
+                            continue;
+                        }
+                        edges_to_go.emplace_back(g[cur_vertex][i].profit, i);
                     }
-                    if (cur_time + g[cur_vertex][i].cost > graph.c()) {
-                        continue;
+                    if (edges_to_go.empty()) {
+                        break;
                     }
-                    edges_to_go.emplace_back(g[cur_vertex][i].profit, i);
+                    pos_max = rand_int(edges_to_go.size());
+                } else {
+                    if (path.size() == kRandomWalk) {
+                        cur_seg = graph.GetSegmentNumber(cur_vertex);
+                    }
+                    for (size_t i = 0; i < g[cur_vertex].size(); i++) {
+                        if (g[cur_vertex][i].taken) {
+                            continue;
+                        }
+                        if (cur_time + g[cur_vertex][i].cost > graph.t()) {
+                            continue;
+                        }
+                        if (cur_seg != graph.GetSegmentNumber(g[cur_vertex][i].b)) {
+                            continue;
+                        }
+                        edges_to_go.emplace_back(g[cur_vertex][i].profit, i);
+                    }
+                    if (edges_to_go.empty()) {
+                        if (g[cur_vertex].empty()) {
+                            break;
+                        } else {
+                            for (size_t i = 0; i < g[cur_vertex].size(); i++) {
+                                if (cur_time + g[cur_vertex][i].cost > graph.t()) {
+                                    continue;
+                                }
+                                if (cur_seg != graph.GetSegmentNumber(g[cur_vertex][i].b)) {
+                                    continue;
+                                }
+                                edges_to_go.emplace_back(g[cur_vertex][i].profit, i);
+                            }
+                            if (edges_to_go.empty()) {
+                                break;
+                            }
+                            pos_max = rand() % edges_to_go.size();
+                        }
+                    } else {
+                        pos_max = max_element(edges_to_go.begin(), edges_to_go.end()) - edges_to_go.begin();
+                    }
                 }
-                if (edges_to_go.empty()) {
-                    paths.push_back(path);
-                    break;
-                }
-                int pos_max = max_element(edges_to_go.begin(), edges_to_go.end()) - edges_to_go.begin();
                 int index = edges_to_go[pos_max].second;
-                expected_cost += g[cur_vertex][index].len;
+                if (!g[cur_vertex][index].taken) {
+                    expected_cost += g[cur_vertex][index].len;
+                }
                 cur_time += g[cur_vertex][index].cost;
                 g[cur_vertex][index].taken = true;
                 if (g[cur_vertex][index].rev_index != -1) {
@@ -484,7 +538,13 @@ namespace george {
                     auto rev_index = g[cur_vertex][index].rev_index;
                     g[b][rev_index].taken = true;
                 }
+                cur_vertex = g[cur_vertex][index].b;
+                path.push_back(cur_vertex);
+                if (path.size() > kRandomWalk) {
+                    assert(graph.GetSegmentNumber(cur_vertex) == cur_seg);
+                }
             }
+            paths.push_back(path);
         }
 
         print_ans(paths);
@@ -492,7 +552,7 @@ namespace george {
         cout << "expected score: " << expected_cost << "\n";
 
         int final_score;
-        helper::validation("input.in", "george_output.txt", final_score);
+        helper::validation(graph_file, "george_output.txt", final_score);
         assert(final_score == expected_cost);
     }
 }  // namespace george
@@ -502,7 +562,6 @@ namespace george {
 
 int main() {
     george::solve();
-    gleb::Solve("input.in");
 }
 
 #endif
