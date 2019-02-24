@@ -65,17 +65,20 @@ static Point FromLatLon(double lat, double lon)
   return {LonToX(lon), LatToY(lat)};
 }
 
+template <typename T = bool>
 struct Edge {
     int a, b;
     int len, cost;
     bool taken;
     int id;
+    T data;
 };
 
 struct Coordinates {
     double latitude, longitude;
 };
 
+template<typename T = bool>
 class Graph {
 public:
     Graph(string input_name) {
@@ -107,19 +110,19 @@ public:
         }
     }
 
-    vector<vector<Edge>> graph() const {
+    vector<vector<Edge<T>>> graph() const {
         return g_;
     }
 
-    vector<vector<Edge>> full_graph() const {
+    vector<vector<Edge<T>>> full_graph() const {
         return full_g_;
     }
 
-    vector<vector<Edge>>& graph() {
+    vector<vector<Edge<T>>>& graph() {
         return g_;
     }
 
-    vector<vector<Edge>>& full_graph() {
+    vector<vector<Edge<T>>>& full_graph() {
         return full_g_;
     }
 
@@ -206,7 +209,7 @@ void validation(string graph_file_name, string file_name, int& cost) {
         for (size_t i = 0; i + 1 < path.size(); i++) {
             int a = path[i];
             int b = path[i + 1];
-            const Edge& edge = g.full_graph()[a][b];
+            auto& edge = g.full_graph()[a][b];
             if (edge.a == -1) {
                 ss << "no edge found between " << path[i] << " and " << path[i + 1] << "\n";
                 throw ss.str();
@@ -227,6 +230,14 @@ void validation(string graph_file_name, string file_name, int& cost) {
     }
 }
 }  // namespace helper
+
+namespace gleb {
+    using namespace helper;
+    void Solve(const string& out) {
+        Graph gr("input.in");
+    }
+
+} // namespace gleb
 
 #undef int
 #ifndef TEST
