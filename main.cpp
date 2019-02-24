@@ -154,7 +154,7 @@ public:
         return c_;
     }
 
-    static unordered_map<int, int> GetSegments(vector<Point> const & coordinates, size_t startJunctionNumber)
+    static unordered_map<int, int> GetSegments1(vector<Point> const & coordinates, size_t startJunctionNumber)
     {
         vector<pair<Point, int>> right;
         vector<pair<Point, int>> left;
@@ -193,7 +193,6 @@ public:
         };
 
         std::sort(right.begin(), right.end(), comparator);
-
         std::sort(left.begin(), left.end(), comparator);
 
         preRight.insert(preRight.end(), right.begin(), right.end());
@@ -221,9 +220,94 @@ public:
         return result;
     }
 
+    // by junction profit
+    void GetSegments2()
+    {
+        vector<pair<Point, int>> right;
+        vector<pair<Point, int>> left;
+
+        vector<pair<Point, int>> preLeft;
+        vector<pair<Point, int>> preRight;
+        Point start = coordinates_[s_];
+        for (size_t i = 0; i < coordinates_.size(); ++i)
+        {
+            if (i == s_)
+                continue;
+
+            auto const & p = coordinates_[i];
+            if (p.x == start.x)
+            {
+                if (p.y > 0)
+                    preLeft.emplace_back(p, i);
+                else
+                    preRight.emplace_back(p, i);
+
+                continue;
+            }
+
+            if (p.x - start.x > 0)
+                right.emplace_back(p, i);
+            else
+                left.emplace_back(p, i);
+        }
+
+        auto const comparator = [&start](auto const & a, auto const & b)
+        {
+            double aCoef = (a.first.y - start.y) / (a.first.x - start.x);
+            double bCoef = (b.first.y - start.y) / (b.first.x - start.x);
+
+            return aCoef < bCoef;
+        };
+
+        std::sort(right.begin(), right.end(), comparator);
+        std::sort(left.begin(), left.end(), comparator);
+
+        preRight.insert(preRight.end(), right.begin(), right.end());
+        preLeft.insert(preLeft.end(), left.begin(), left.end());
+
+        preRight.insert(preRight.end(), preLeft.begin(), preLeft.end());
+
+        auto const getJunctionProfit = [&](size_t junctionNumber) {
+            double sum = 0;
+            for (size_t j = 0; j < g_[junctionNumber].size(); j++)
+            {
+                sum += g_[junctionNumber][j].len;
+            }
+
+            return sum;
+        };
+
+        double allLength = 0;
+        for (size_t i = 0; i < s_; i++)
+        {
+            double profit = getJunctionProfit(i);
+            allLength += profit / g_[i].size();
+        }
+
+        double n = allLength / 8.0;
+        double cnt = 0.0;
+        int currentSector = 0;
+        for (size_t i = 0; i < coordinates_.size(); ++i)
+        {
+            if (cnt >= n)
+            {
+                ++currentSector;
+                cnt = 0;
+            }
+
+            sectors_[preRight[i].second] = currentSector;
+            cnt += getJunctionProfit(preRight[i].second);
+        }
+
+        sectors_[s_] = 0;
+    }
+
     void PrepareSegments()
     {
-        sectors_ = GetSegments(coordinates_, s_);
+        if (true)
+            sectors_ = GetSegments1(coordinates_, s_);
+        else
+            GetSegments2();
     }
 
     int GetSegmentNumber(int junctionNumber) {
