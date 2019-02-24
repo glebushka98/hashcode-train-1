@@ -11,18 +11,26 @@
 #include <optional>
 #include <set>
 #include <map>
+#include <random>
 
 using namespace std;
 
 #define int int64_t
 struct Point
 {
-  Point(double x, double y): x(x), y(y) {}
-  Point operator-(const Point & point) {
+    Point() = default;
+    Point(double x, double y): x(x), y(y) {}
+    Point operator-(const Point & point) {
     return {x - point.x, y - point.y};
-  }
+    }
 
-  double x, y;
+    Point(const Point & from) {
+      x = from.x;
+      y = from.y;
+    }
+
+    double x = 0.0;
+    double y = 0.0;
 };
 
 namespace helper {
@@ -59,25 +67,30 @@ static Point FromLatLon(double lat, double lon)
   return {LonToX(lon), LatToY(lat)};
 }
 
+template <typename T = bool>
 struct Edge {
     int a, b;
     int len, cost;
     bool taken;
     int id;
+    T data = T();
 };
 
 struct Coordinates {
     double latitude, longitude;
 };
 
+template<typename T = bool>
 class Graph {
 public:
     Graph(string input_name) {
         ifstream in(input_name);
         in >> n_ >> m_ >> t_ >> c_ >> s_;
+        double lat, lon;
         coordinates_.resize(n_);
         for (int i = 0; i < n_; i++) {
-            in >> coordinates_[i].latitude >> coordinates_[i].longitude;
+            in >> lat >> lon;
+            coordinates_[i] = helper::FromLatLon(lat, lon);
         }
         g_.resize(n_);
         for (int i = 0; i < m_; i++) {
@@ -90,27 +103,27 @@ public:
         }
     }
 
-    vector<vector<Edge>> graph() const {
+    vector<vector<Edge<T>>> graph() const {
         return g_;
     }
 
-    vector<vector<Edge>> full_graph() const {
+    vector<vector<Edge<T>>> full_graph() const {
         return full_g_;
     }
 
-    vector<vector<Edge>>& graph() {
+    vector<vector<Edge<T>>>& graph() {
         return g_;
     }
 
-    vector<vector<Edge>>& full_graph() {
+    vector<vector<Edge<T>>>& full_graph() {
         return full_g_;
     }
 
-    vector<Coordinates> coordinates() const {
+    vector<Point> coordinates() const {
         return coordinates_;
     }
 
-    vector<Coordinates>& coordinates() {
+    vector<Point>& coordinates() {
         return coordinates_;
     }
 
@@ -134,6 +147,10 @@ public:
         return c_;
     }
 
+    int GetSegmentNumber(int junctionNumber) {
+        return 0;
+    }
+
 private:
     int n_;
     int m_;
@@ -141,9 +158,9 @@ private:
     int s_;
     int t_;
 
-    vector<vector<Edge>> g_;
-    vector<vector<Edge>> full_g_;
-    vector<Coordinates> coordinates_;
+    vector<vector<Edge<T>>> g_;
+    vector<vector<Edge<T>>> full_g_;
+    vector<Point> coordinates_;
 };
 
 void validation(string graph_file_name, string file_name, int& cost) {
@@ -215,8 +232,90 @@ void validation(string graph_file_name, string file_name, int& cost) {
 
 }  // namespace helper
 
+namespace gleb {
+    using namespace helper;
+
+    const int ITERATION = 100;
+    const int PATH_TO_TAKE = 1000;
+    const int BEST_PATH_TO_TAKE = 10;
+
+    void Solve(const string &out) {
+        Graph<double> gr("input.in");
+        auto &my_gr = gr.graph();
+
+        auto T = gr.t();
+
+        std::random_device rd;
+        std::mt19937 gen(rd());
+
+        auto gen_path = [&](int start, int64_t &score) {
+            int cur = start;
+            vector<Edge<double> *> path;
+            set<int> st;
+            int64_t cur_t = T;
+            score = 0;
+            while (cur_t) {
+                vector<Edge<double> *> vv;
+                double sum = 0;
+                for (auto &e : my_gr[cur]) {
+                    if (T >= e.cost) {
+                        vv.push_back(&e);
+                        sum += e.data;
+                    }
+                }
+                std::uniform_int_distribution<> dis(0, sum);
+                if (sum == 0) {
+                    return path;
+                }
+                int64_t rd_res = dis(gen);
+                sum = 0;
+                for (auto &v : vv) {
+                    sum += v->data;
+                    if (sum >= rd_res) {
+                        path.push_back(v);
+                        cur_t -= v->cost;
+                        auto hs = v->a * 20000 + v->b;
+                        if (st.count(hs)) {
+                            score += v->len;
+                        }
+                        st.insert(hs);
+                        assert(v->a == cur);
+                        cur = v->b;
+                        break;
+                    }
+                }
+            }
+            return path;
+        };
+        cerr << "ITERATIONS started" << endl;
+//        for (int car = 0; car < gr.c(); car++) {
+        for (int i = 0; i < ITERATION; i++) {
+            auto cmp = [](auto &l, auto &r) {
+                return l.first > r.first;
+            };
+            set<pair<int64_t, vector<Edge<double> *>>, decltype(cmp)> st(cmp);
+            for (int j = 0; j < PATH_TO_TAKE; j++) {
+                int64_t score = 0;
+                auto vec = gen_path(gr.s(), score);
+                st.emplace(score, vec);
+                if (st.size() > BEST_PATH_TO_TAKE) {
+                    st.erase(*st.rbegin());
+                }
+            }
+            cerr << "ITERATION " << i << " SCORE FOUND " << st.begin()->first << endl;
+
+            for (auto &bst : st) {
+                for (auto &el : bst.second) {
+                    el->data++;
+                }
+            }
+        }
+
+    }
+}  // namespace gleb;
+
 namespace george {
-    struct Edge : public helper::Edge {
+    struct Edge : public helper::Edge<> {
         double profit;
         int rev_index;
     };
@@ -306,13 +405,17 @@ namespace george {
         helper::validation("input.in", "george_output.txt", final_score);
         assert(final_score == expected_cost);
     }
-}  // namespace George
+}  // namespace george
 
 #undef int
 #ifndef TEST
 
 int main() {
+<<<<<<< HEAD
     george::solve();
+=======
+    gleb::Solve("input.in");
+>>>>>>> d9c6f76a704b38d6b039618eb05c03ed1efdb895
 }
 
 #endif
