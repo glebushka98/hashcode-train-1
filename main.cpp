@@ -81,6 +81,7 @@ public:
             in >> coordinates_[i].latitude >> coordinates_[i].longitude;
         }
         full_g_.resize(n_);
+        g_.resize(n_);
         for (int i = 0; i < n_; i++) {
             full_g_[i].resize(n_);
             for (int j = 0; j < n_; j++) {
@@ -155,9 +156,9 @@ private:
     vector<Coordinates> coordinates_;
 };
 
-void validation(const string& graph_file_name, const string& file_name, int& cost) {
-    const string input_name = "input.in";
-    const Graph g(graph_file_name);
+void validation(string graph_file_name, string file_name, int& cost) {
+    string input_name = "input.in";
+    Graph g(graph_file_name);
     ifstream cin(file_name);
     stringstream ss;
 

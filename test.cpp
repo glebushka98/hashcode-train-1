@@ -2,6 +2,7 @@
 
 #include <iostream>
 #include <assert.h>
+#include <sstream>
 #include "test.h"
 #include "main.cpp"
 
@@ -12,9 +13,13 @@ namespace Testing {
     }
 
     void TestValidation() {
-//        int64_t cost;
-//        validation("", cost);
-//        assert(cost == 4342);
+        int64_t cost;
+        validation("test_graph.in", "test_answer.out", cost);
+        if (cost != 450) {
+            stringstream ss;
+            ss << "wrong answer: " << cost << " correct is: " << 450 << "\n";
+            throw ss.str();
+        }
     }
 
     void TestFromLatLon() {
