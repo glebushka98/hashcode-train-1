@@ -12,6 +12,10 @@ namespace Testing {
         REQUIRE(true);
     }
 
+    void TestReadGraph() {
+        Graph g("input.in");
+    }
+
     void TestValidation() {
         int64_t cost;
         validation("test_graph.in", "test_answer.out", cost);
@@ -38,6 +42,7 @@ namespace Testing {
         tester.RegisterTest("Easy Test", TestEasy);
         tester.RegisterTest("Test Validation", TestValidation);
         tester.RegisterTest("TestFromLatLon", TestFromLatLon);
+        tester.RegisterTest("TestReadGraph", TestReadGraph);
         tester.RunTests();
     }
 } // namespace Testing
