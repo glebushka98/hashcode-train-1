@@ -10,6 +10,7 @@
 #include <utility>
 #include <optional>
 #include <set>
+#include <map>
 
 using namespace std;
 
@@ -78,22 +79,13 @@ public:
         for (int i = 0; i < n_; i++) {
             in >> coordinates_[i].latitude >> coordinates_[i].longitude;
         }
-        full_g_.resize(n_);
         g_.resize(n_);
-        for (int i = 0; i < n_; i++) {
-            full_g_[i].resize(n_);
-            for (int j = 0; j < n_; j++) {
-                full_g_[i][j] = {-1, -1, -1, -1, false, -1};
-            }
-        }
         for (int i = 0; i < m_; i++) {
             int a, b, d, c, l;
             in >> a >> b >> d >> c >> l;
             g_[a].push_back({a, b, l, c, true, i});
-            full_g_[a][b] = {a, b, l, c, true, i};
             if (d == 2) {
                 g_[b].push_back({b, a, l, c, true, i});
-                full_g_[b][a] = {b, a, l, c, true, i};
             }
         }
     }
@@ -193,7 +185,12 @@ void validation(string graph_file_name, string file_name, int& cost) {
         for (size_t i = 0; i + 1 < path.size(); i++) {
             int a = path[i];
             int b = path[i + 1];
-            const Edge& edge = g.full_graph()[a][b];
+            Edge edge;
+            for (const auto& e : g.graph()[a]) {
+                if (e.b == b) {
+                    edge = e;
+                }
+            }
             if (edge.a == -1) {
                 ss << "no edge found between " << path[i] << " and " << path[i + 1] << "\n";
                 throw ss.str();
@@ -212,15 +209,110 @@ void validation(string graph_file_name, string file_name, int& cost) {
             throw ss.str();
         }
     }
+
+    cout << "you score: " << cost << "\n";
 }
 
-}  // namespace
+}  // namespace helper
+
+namespace george {
+    struct Edge : public helper::Edge {
+        double profit;
+        int rev_index;
+    };
+
+    void print_ans(const vector<vector<int>>& paths) {
+        ofstream out("george_output.txt");
+        out << paths.size() << endl;
+        for (const auto& path : paths) {
+            out << path.size() << " ";
+            for (auto v : path) {
+                out << v << " ";
+            }
+            out << "\n";
+        }
+        out.close();
+    }
+
+    void solve() {
+        helper::Graph graph("input.in");
+        vector<vector<Edge>> g(graph.n());
+        map<pair<int, int>, int> used_edges;
+        for (size_t i = 0; i < graph.n(); i++) {
+            for (size_t j = 0; j < graph.graph()[i].size(); j++) {
+                const auto& e = graph.graph()[i][j];
+                int rev_index = -1;
+                if (used_edges.count({e.a, e.b})) {
+                    rev_index = used_edges[{e.a, e.b}];
+                } else {
+                    used_edges[{e.b, e.a}] = j;
+                }
+                Edge new_edge;
+                new_edge.a = e.a;
+                new_edge.b = e.b;
+                new_edge.len = e.len;
+                new_edge.cost = e.cost;
+                if (rev_index != -1) {
+                    new_edge.rev_index = rev_index;
+                    g[e.b][rev_index].rev_index = j + 1;
+                } else {
+                    new_edge.rev_index = -1;
+                }
+                g[i].push_back(std::move(new_edge));
+            }
+            sort(g[i].begin(), g[i].end(), [](const Edge& lhs, const Edge& rhs) -> bool {
+                return lhs.b < rhs.b;
+            });
+        }
+        vector<vector<int>> paths;
+        int expected_cost = 0;
+        for (size_t car = 0; car < graph.c(); car++) {
+            int cur_time = 0;
+            while (cur_time <= graph.t()) {
+                int cur_vertex = graph.s();
+                vector<pair<double, int>> edges_to_go;
+                vector<int> path{cur_vertex};
+                for (size_t i = 0; i < g[cur_vertex].size(); i++) {
+                    if (g[cur_vertex][i].taken) {
+                        continue;
+                    }
+                    if (cur_time + g[cur_vertex][i].cost > graph.c()) {
+                        continue;
+                    }
+                    edges_to_go.emplace_back(g[cur_vertex][i].profit, i);
+                }
+                if (edges_to_go.empty()) {
+                    paths.push_back(path);
+                    break;
+                }
+                int pos_max = max_element(edges_to_go.begin(), edges_to_go.end()) - edges_to_go.begin();
+                int index = edges_to_go[pos_max].second;
+                expected_cost += g[cur_vertex][index].len;
+                cur_time += g[cur_vertex][index].cost;
+                g[cur_vertex][index].taken = true;
+                if (g[cur_vertex][index].rev_index != -1) {
+                    auto b = g[cur_vertex][index].b;
+                    auto rev_index = g[cur_vertex][index].rev_index;
+                    g[b][rev_index].taken = true;
+                }
+            }
+        }
+
+        print_ans(paths);
+
+        cout << "expected score: " << expected_cost << "\n";
+
+        int final_score;
+        helper::validation("input.in", "george_output.txt", final_score);
+        assert(final_score == expected_cost);
+    }
+}  // namespace George
 
 #undef int
 #ifndef TEST
 
 int main() {
-
+    george::solve();
 }
 
 #endif
